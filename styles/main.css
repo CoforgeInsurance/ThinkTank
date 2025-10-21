@@ -1233,3 +1233,190 @@ mark {
     }
 }
 
+/* Dropdown Filter Styles */
+.card-controls, .caselet-controls, .quiz-controls, .fact-controls, .ponder-controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-dropdowns {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid #d1d5da;
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--github-black);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    min-width: 150px;
+    max-height: 38px;
+}
+
+.filter-select:hover {
+    border-color: var(--copilot-purple);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--copilot-purple);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.filter-select option {
+    padding: var(--spacing-xs);
+}
+
+.filter-select option:checked {
+    background: var(--copilot-purple);
+    color: var(--white);
+}
+
+.card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+/* Active Filters Display */
+.active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
+    min-height: 0;
+}
+
+.active-filters:empty {
+    display: none;
+}
+
+.filter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--copilot-purple);
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    animation: fadeIn var(--transition-fast);
+}
+
+.filter-badge-remove {
+    background: none;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0;
+    margin-left: var(--spacing-xs);
+    transition: transform var(--transition-fast);
+}
+
+.filter-badge-remove:hover {
+    transform: scale(1.2);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Filters */
+@media (max-width: 768px) {
+    .filter-dropdowns {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-select {
+        width: 100%;
+        max-height: none;
+    }
+    
+    .card-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .card-actions button {
+        width: 100%;
+    }
+}
+
+/* Update card-controls for backward compatibility */
+.card-controls {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+@media (max-width: 768px) {
+    .card-controls {
+        flex-direction: column;
+    }
+}
+
+/* Meta badges for caselets and ponder cards */
+.caselet-meta, .ponder-meta {
+    display: flex;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.badge-domain, .badge-theme {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge-complexity {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.badge-type {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+/* No results styling */
+.no-results {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--medium-gray);
+}
+
+.no-results p {
+    font-size: 1.1rem;
+}
+

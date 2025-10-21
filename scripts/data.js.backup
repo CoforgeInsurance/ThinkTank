@@ -481,37 +481,7 @@ const mcqQuestions = [
         explanation: 'Tab is the default keyboard shortcut to accept a GitHub Copilot suggestion in VS Code.',
         subject: 'Shortcuts',
         difficulty: 'beginner',
-        questionType: 'Practical',
-        subject: 'Security',
-        difficulty: 'advanced',
-        questionType: 'Conceptual',
-        subject: 'Shortcuts',
-        difficulty: 'intermediate',
-        questionType: 'Practical',
-        subject: 'Basics',
-        difficulty: 'beginner',
-        questionType: 'Conceptual',
-        subject: 'Features',
-        difficulty: 'intermediate',
-        questionType: 'Conceptual',
-        subject: 'Best Practices',
-        difficulty: 'intermediate',
-        questionType: 'Conceptual',
-        subject: 'Basics',
-        difficulty: 'beginner',
-        questionType: 'Conceptual',
-        subject: 'Features',
-        difficulty: 'intermediate',
-        questionType: 'Conceptual',
-        subject: 'Basics',
-        difficulty: 'beginner',
-        questionType: 'Conceptual',
-        subject: 'Prompts',
-        difficulty: 'intermediate',
-        questionType: 'Practical',
-        subject: 'Basics',
-        difficulty: 'beginner',
-        questionType: 'Conceptual'
+        questionType: 'Practical'
     },
     {
         id: 2,
@@ -558,106 +528,76 @@ const mcqQuestions = [
         question: 'What should you check in Copilot-generated code for security-critical applications?',
         options: ['Only syntax errors', 'Input validation, SQL injection, and XSS vulnerabilities', 'Only variable names', 'Nothing, Copilot code is always secure'],
         correctAnswer: 1,
-        explanation: 'Always check for input validation, SQL injection, XSS risks, and other security vulnerabilities in Copilot suggestions.',
-        subject: 'Security',
-        difficulty: 'advanced',
-        questionType: 'Conceptual'
+        explanation: 'Always check for input validation, SQL injection, XSS risks, and other security vulnerabilities in Copilot suggestions.'
     },
     {
         id: 7,
         question: 'How can you see alternative suggestions in VS Code?',
         options: ['Tab repeatedly', 'Alt+] and Alt+[', 'Ctrl+Alt+Space', 'F12'],
         correctAnswer: 1,
-        explanation: 'Alt+] shows the next suggestion and Alt+[ shows the previous suggestion. You can also use Ctrl+Enter to see all suggestions.',
-        subject: 'Shortcuts',
-        difficulty: 'intermediate',
-        questionType: 'Practical'
+        explanation: 'Alt+] shows the next suggestion and Alt+[ shows the previous suggestion. You can also use Ctrl+Enter to see all suggestions.'
     },
     {
         id: 8,
         question: 'Which IDE is NOT officially supported by GitHub Copilot?',
         options: ['Visual Studio Code', 'JetBrains IDEs', 'Sublime Text', 'Visual Studio'],
         correctAnswer: 2,
-        explanation: 'GitHub Copilot officially supports VS Code, JetBrains IDEs, Neovim, and Visual Studio. Sublime Text is not officially supported.',
-        subject: 'Basics',
-        difficulty: 'beginner',
-        questionType: 'Conceptual'
+        explanation: 'GitHub Copilot officially supports VS Code, JetBrains IDEs, Neovim, and Visual Studio. Sublime Text is not officially supported.'
     },
     {
         id: 9,
         question: 'What is Copilot Labs?',
         options: ['A testing environment', 'Experimental features like code explanation and translation', 'A separate IDE', 'A training program'],
         correctAnswer: 1,
-        explanation: 'Copilot Labs offers experimental features including code explanations, language translation, test generation, and code transformations.',
-        subject: 'Features',
-        difficulty: 'intermediate',
-        questionType: 'Conceptual'
+        explanation: 'Copilot Labs offers experimental features including code explanations, language translation, test generation, and code transformations.'
     },
     {
         id: 10,
         question: 'How does providing context help Copilot?',
         options: ['It doesn\'t help', 'It slows down suggestions', 'It helps generate more accurate and relevant code', 'It only helps with comments'],
         correctAnswer: 2,
-        explanation: 'Providing context through open files, clear variable names, and descriptive comments helps Copilot generate more accurate suggestions.',
-        subject: 'Best Practices',
-        difficulty: 'intermediate',
-        questionType: 'Conceptual'
+        explanation: 'Providing context through open files, clear variable names, and descriptive comments helps Copilot generate more accurate suggestions.'
     },
     {
         id: 11,
         question: 'Can Copilot generate entire functions?',
         options: ['No, only single lines', 'Yes, based on comments or signatures', 'Only for Python', 'Only for simple functions'],
         correctAnswer: 1,
-        explanation: 'Copilot can generate entire functions based on descriptive comments or function signatures in many programming languages.',
-        subject: 'Basics',
-        difficulty: 'beginner',
-        questionType: 'Conceptual'
+        explanation: 'Copilot can generate entire functions based on descriptive comments or function signatures in many programming languages.'
     },
     {
         id: 12,
         question: 'What is the duplicate detection feature?',
         options: ['Finds duplicate variables', 'Alerts when suggestions match public code', 'Removes duplicate lines', 'Checks for repeated functions'],
         correctAnswer: 1,
-        explanation: 'Duplicate detection alerts you when Copilot suggestions closely match publicly available code, helping avoid licensing issues.',
-        subject: 'Features',
-        difficulty: 'intermediate',
-        questionType: 'Conceptual'
+        explanation: 'Duplicate detection alerts you when Copilot suggestions closely match publicly available code, helping avoid licensing issues.'
     },
     {
         id: 13,
         question: 'Which language has the BEST support in GitHub Copilot?',
         options: ['Assembly', 'COBOL', 'Python', 'Fortran'],
         correctAnswer: 2,
-        explanation: 'Python has excellent support in GitHub Copilot, along with JavaScript, TypeScript, Ruby, Go, Java, and C#.',
-        subject: 'Basics',
-        difficulty: 'beginner',
-        questionType: 'Conceptual'
+        explanation: 'Python has excellent support in GitHub Copilot, along with JavaScript, TypeScript, Ruby, Go, Java, and C#.'
     },
     {
         id: 14,
         question: 'How should you write prompts for complex tasks?',
         options: ['One long comment', 'Break into smaller, well-described steps', 'Don\'t use comments', 'Use only variable names'],
         correctAnswer: 1,
-        explanation: 'Breaking complex tasks into smaller, well-described steps helps Copilot generate better, more maintainable code.',
-        subject: 'Prompts',
-        difficulty: 'intermediate',
-        questionType: 'Practical'
+        explanation: 'Breaking complex tasks into smaller, well-described steps helps Copilot generate better, more maintainable code.'
     },
     {
         id: 15,
         question: 'Does Copilot learn from your personal code?',
         options: ['Yes, always', 'No, but it uses current file context', 'Only with permission', 'Only in private repos'],
         correctAnswer: 1,
-        explanation: 'Copilot doesn\'t learn from your individual code, but it uses the context of your current file and open files for suggestions.',
-        subject: 'Basics',
-        difficulty: 'beginner',
-        questionType: 'Conceptual'
+        explanation: 'Copilot doesn\'t learn from your individual code, but it uses the context of your current file and open files for suggestions.'
     }
 ];
 
 // Fun Facts Data
 const funFacts = [
-    { id: 1, category: 'History', fact: 'GitHub Copilot was first announced in June 2021 and became generally available in June 2022.', factType: \'Historical\', factType: \'Statistical\', factType: \'Technical\', factType: \'Technical\', factType: \'Feature\', factType: \'Statistical\', factType: \'Technical\', factType: \'Statistical\', factType: \'Statistical\', factType: \'Feature\', factType: \'Business\', factType: \'Technical\', factType: \'Statistical\', factType: \'Feature\', factType: \'Usage\', factType: \'Technical\', factType: \'Statistical\', factType: \'Feature\', factType: \'Feature\', factType: \'Technical\'},
+    { id: 1, category: 'History', fact: 'GitHub Copilot was first announced in June 2021 and became generally available in June 2022.' },
     { id: 2, category: 'Performance', fact: 'According to GitHub research, developers using Copilot complete tasks up to 55% faster than those without it.' },
     { id: 3, category: 'Usage', fact: 'GitHub Copilot supports over 60 programming languages, though quality varies by language popularity.' },
     { id: 4, category: 'Technology', fact: 'Copilot was trained on billions of lines of public code from GitHub repositories.' },
@@ -685,91 +625,61 @@ const pointsToPonder = [
         id: 1,
         question: 'How will AI pair programmers like Copilot change the role of software developers in the next decade?',
         context: 'As AI becomes better at generating code, will developers focus more on architecture, problem-solving, and code review rather than writing boilerplate?',
-        relatedTopics: ['AI Ethics', 'Future of Work', 'Software Architecture'],
-        theme: 'Future of Development',
-        complexity: 'intermediate',
-        discussionType: 'Open Discussion'
+        relatedTopics: ['AI Ethics', 'Future of Work', 'Software Architecture']
     },
     {
         id: 2,
         question: 'What are the ethical implications of training AI models on public code repositories?',
         context: 'Copilot was trained on billions of lines of public code. What responsibilities do AI creators have regarding licensing and attribution?',
-        relatedTopics: ['Copyright', 'Open Source', 'AI Ethics'],
-        theme: 'AI Ethics',
-        complexity: 'advanced',
-        discussionType: 'Ethical Debate'
+        relatedTopics: ['Copyright', 'Open Source', 'AI Ethics']
     },
     {
         id: 3,
         question: 'Could over-reliance on Copilot hinder the development of programming skills in junior developers?',
         context: 'If developers rely too heavily on AI suggestions, might they miss out on learning fundamental programming concepts and problem-solving skills?',
-        relatedTopics: ['Education', 'Skill Development', 'Best Practices'],
-        theme: 'Education',
-        complexity: 'intermediate',
-        discussionType: 'Critical Thinking'
+        relatedTopics: ['Education', 'Skill Development', 'Best Practices']
     },
     {
         id: 4,
         question: 'How should teams balance the productivity gains of Copilot with code quality and security concerns?',
         context: 'While Copilot increases speed, it may introduce security vulnerabilities or lower-quality code if not properly reviewed.',
-        relatedTopics: ['Security', 'Code Quality', 'Team Collaboration'],
-        theme: 'Best Practices',
-        complexity: 'intermediate',
-        discussionType: 'Balance & Trade-offs'
+        relatedTopics: ['Security', 'Code Quality', 'Team Collaboration']
     },
     {
         id: 5,
         question: 'What new skills will developers need to effectively collaborate with AI coding assistants?',
         context: 'Prompt engineering and AI collaboration are emerging skills. What else will developers need to learn?',
-        relatedTopics: ['Prompt Engineering', 'AI Collaboration', 'Professional Development'],
-        theme: 'Professional Development',
-        complexity: 'intermediate',
-        discussionType: 'Skill Planning'
+        relatedTopics: ['Prompt Engineering', 'AI Collaboration', 'Professional Development']
     },
     {
         id: 6,
         question: 'How might Copilot affect the diversity and creativity of code solutions?',
         context: 'If many developers use the same AI assistant, could we see more homogeneous code patterns across the industry?',
-        relatedTopics: ['Code Diversity', 'Innovation', 'Best Practices'],
-        theme: 'Innovation',
-        complexity: 'advanced',
-        discussionType: 'Impact Analysis'
+        relatedTopics: ['Code Diversity', 'Innovation', 'Best Practices']
     },
     {
         id: 7,
         question: 'What responsibility do developers have when using AI-generated code in production systems?',
         context: 'When code is AI-generated, who is accountable for bugs or security issues - the developer, the AI creator, or both?',
-        relatedTopics: ['Accountability', 'Professional Ethics', 'Quality Assurance'],
-        theme: 'Professional Ethics',
-        complexity: 'advanced',
-        discussionType: 'Accountability'
+        relatedTopics: ['Accountability', 'Professional Ethics', 'Quality Assurance']
     },
     {
         id: 8,
         question: 'How can organizations ensure AI coding tools like Copilot don\'t compromise proprietary code?',
         context: 'While Copilot doesn\'t share your code, there are concerns about data privacy and intellectual property.',
-        relatedTopics: ['Data Privacy', 'IP Protection', 'Enterprise Security'],
-        theme: 'Security',
-        complexity: 'advanced',
-        discussionType: 'Risk Management'
+        relatedTopics: ['Data Privacy', 'IP Protection', 'Enterprise Security']
     },
     {
         id: 9,
         question: 'Will AI coding assistants democratize programming or create a new digital divide?',
         context: 'Copilot requires a paid subscription. Could this create inequality between developers with and without access?',
-        relatedTopics: ['Accessibility', 'Equity', 'Technology Access'],
-        theme: 'Accessibility',
-        complexity: 'intermediate',
-        discussionType: 'Social Impact'
+        relatedTopics: ['Accessibility', 'Equity', 'Technology Access']
     },
     {
         id: 10,
         question: 'How should code review processes evolve in the age of AI-assisted development?',
         context: 'Traditional code reviews assume human-written code. What new considerations arise with AI-generated code?',
-        relatedTopics: ['Code Review', 'Quality Assurance', 'Team Processes'],
-        theme: 'Quality Assurance',
-        complexity: 'intermediate',
-        discussionType: 'Process Evolution'
+        relatedTopics: ['Code Review', 'Quality Assurance', 'Team Processes']
     }
 ];
 

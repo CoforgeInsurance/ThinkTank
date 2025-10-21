@@ -2,6 +2,10 @@
 let currentCardIndex = 0;
 let currentCategory = 'all';
 let filteredCards = [];
+let filteredCaselets = [];
+let filteredQuizQuestions = [];
+let filteredFunFacts = [];
+let filteredPonderItems = [];
 let currentQuizQuestion = 0;
 let quizScore = 0;
 let selectedAnswers = [];
@@ -14,16 +18,52 @@ let activeFilters = {
     difficulties: ['beginner', 'intermediate', 'advanced']
 };
 
+// Component-specific filter state
+let cardFilters = {
+    categories: [],
+    difficulties: [],
+    status: []
+};
+
+let caseletFilters = {
+    domains: [],
+    complexities: [],
+    types: []
+};
+
+let quizFilters = {
+    subjects: [],
+    difficulties: [],
+    types: []
+};
+
+let factFilters = {
+    categories: [],
+    types: []
+};
+
+let ponderFilters = {
+    themes: [],
+    complexities: [],
+    discussionTypes: []
+};
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeNavigation();
     renderLearningGuides();
     initializeMemoryCards();
+    initializeCardFilters();
     renderCaselets();
+    initializeCaseletFilters();
     initializeQuiz();
+    initializeQuizFilters();
     initializeFunFacts();
+    initializeFunFactFilters();
     renderPointsToPonder();
+    initializePonderFilters();
     initializeSearch();
+    loadFilterStateFromSession();
 });
 
 // Navigation
@@ -182,7 +222,18 @@ function navigateCard(direction) {
 }
 
 function renderCurrentCard() {
-    if (filteredCards.length === 0) return;
+    if (filteredCards.length === 0) {
+        const cardElement = document.getElementById('memory-card');
+        if (cardElement) {
+            cardElement.querySelector('.card-question').textContent = 'No cards match the selected filters';
+            cardElement.querySelector('.card-answer').textContent = 'Try adjusting your filter selection';
+        }
+        const counter = document.getElementById('card-counter');
+        if (counter) {
+            counter.textContent = '0 / 0';
+        }
+        return;
+    }
     
     const card = filteredCards[currentCardIndex];
     const cardElement = document.getElementById('memory-card');
@@ -200,13 +251,128 @@ function renderCurrentCard() {
     }
 }
 
+// Card Filter Functions
+function initializeCardFilters() {
+    // Populate dynamic filter options
+    populateCardFilters();
+    
+    // Setup event listeners
+    const categorySelect = document.getElementById('card-category');
+    const difficultySelect = document.getElementById('card-difficulty');
+    const statusSelect = document.getElementById('card-status');
+    const clearBtn = document.getElementById('clear-card-filters');
+    
+    if (categorySelect) {
+        categorySelect.addEventListener('change', applyCardFilters);
+    }
+    if (difficultySelect) {
+        difficultySelect.addEventListener('change', applyCardFilters);
+    }
+    if (statusSelect) {
+        statusSelect.addEventListener('change', applyCardFilters);
+    }
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearCardFilters);
+    }
+}
+
+function populateCardFilters() {
+    // Extract unique values from data
+    const categories = new Set();
+    const difficulties = new Set();
+    
+    memoryCards.forEach(card => {
+        if (card.category) categories.add(card.category);
+        if (card.difficulty) difficulties.add(card.difficulty);
+    });
+    
+    // Populate category dropdown
+    const categorySelect = document.getElementById('card-category');
+    if (categorySelect) {
+        const existingOptions = Array.from(categorySelect.options).map(opt => opt.value);
+        categories.forEach(cat => {
+            if (!existingOptions.includes(cat)) {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1).replace('-', ' ');
+                option.selected = true;
+                categorySelect.appendChild(option);
+            }
+        });
+    }
+}
+
+function applyCardFilters() {
+    const categorySelect = document.getElementById('card-category');
+    const difficultySelect = document.getElementById('card-difficulty');
+    const statusSelect = document.getElementById('card-status');
+    
+    // Get selected values
+    const selectedCategories = Array.from(categorySelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedDifficulties = Array.from(difficultySelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedStatus = Array.from(statusSelect?.selectedOptions || []).map(opt => opt.value);
+    
+    // Store in state
+    cardFilters.categories = selectedCategories;
+    cardFilters.difficulties = selectedDifficulties;
+    cardFilters.status = selectedStatus;
+    
+    // Apply filters
+    filteredCards = memoryCards.filter(card => {
+        const categoryMatch = selectedCategories.includes('all') || selectedCategories.length === 0 || selectedCategories.includes(card.category);
+        const difficultyMatch = selectedDifficulties.includes('all') || selectedDifficulties.length === 0 || selectedDifficulties.includes(card.difficulty);
+        
+        let statusMatch = selectedStatus.includes('all') || selectedStatus.length === 0;
+        if (!statusMatch) {
+            if (selectedStatus.includes('completed') && card.completed) statusMatch = true;
+            if (selectedStatus.includes('not-started') && !card.completed) statusMatch = true;
+        }
+        
+        return categoryMatch && difficultyMatch && statusMatch;
+    });
+    
+    currentCardIndex = 0;
+    renderCurrentCard();
+    updateActiveFilters('card', cardFilters);
+    saveFilterStateToSession();
+}
+
+function clearCardFilters() {
+    const categorySelect = document.getElementById('card-category');
+    const difficultySelect = document.getElementById('card-difficulty');
+    const statusSelect = document.getElementById('card-status');
+    
+    // Select all options
+    if (categorySelect) {
+        Array.from(categorySelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    }
+    if (difficultySelect) {
+        Array.from(difficultySelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    }
+    if (statusSelect) {
+        Array.from(statusSelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    }
+    
+    applyCardFilters();
+}
+
 // Caselets
-function renderCaselets() {
+function renderCaselets(caseletList = caselets) {
     const container = document.getElementById('caselets-container');
     if (!container) return;
     
-    container.innerHTML = caselets.map(caselet => `
+    if (caseletList.length === 0) {
+        container.innerHTML = '<div class="no-results"><p>No caselets match the selected filters. Try adjusting your selection.</p></div>';
+        return;
+    }
+    
+    container.innerHTML = caseletList.map(caselet => `
         <div class="caselet-card">
+            <div class="caselet-meta">
+                <span class="badge badge-domain">${caselet.domain}</span>
+                <span class="badge badge-complexity">${caselet.complexity}</span>
+                <span class="badge badge-type">${caselet.caseType}</span>
+            </div>
             <h3 class="caselet-title">${caselet.title}</h3>
             <div class="caselet-section">
                 <h4>Scenario</h4>
@@ -228,6 +394,92 @@ function renderCaselets() {
             </div>
         </div>
     `).join('');
+}
+
+function initializeCaseletFilters() {
+    populateCaseletFilters();
+    
+    const domainSelect = document.getElementById('caselet-domain');
+    const complexitySelect = document.getElementById('caselet-complexity');
+    const typeSelect = document.getElementById('caselet-type');
+    const clearBtn = document.getElementById('clear-caselet-filters');
+    
+    if (domainSelect) domainSelect.addEventListener('change', applyCaseletFilters);
+    if (complexitySelect) complexitySelect.addEventListener('change', applyCaseletFilters);
+    if (typeSelect) typeSelect.addEventListener('change', applyCaseletFilters);
+    if (clearBtn) clearBtn.addEventListener('click', clearCaseletFilters);
+    
+    filteredCaselets = [...caselets];
+}
+
+function populateCaseletFilters() {
+    const domains = new Set();
+    const types = new Set();
+    
+    caselets.forEach(caselet => {
+        if (caselet.domain) domains.add(caselet.domain);
+        if (caselet.caseType) types.add(caselet.caseType);
+    });
+    
+    const domainSelect = document.getElementById('caselet-domain');
+    if (domainSelect) {
+        domains.forEach(domain => {
+            const option = document.createElement('option');
+            option.value = domain;
+            option.textContent = domain;
+            option.selected = true;
+            domainSelect.appendChild(option);
+        });
+    }
+    
+    const typeSelect = document.getElementById('caselet-type');
+    if (typeSelect) {
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            option.selected = true;
+            typeSelect.appendChild(option);
+        });
+    }
+}
+
+function applyCaseletFilters() {
+    const domainSelect = document.getElementById('caselet-domain');
+    const complexitySelect = document.getElementById('caselet-complexity');
+    const typeSelect = document.getElementById('caselet-type');
+    
+    const selectedDomains = Array.from(domainSelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedComplexities = Array.from(complexitySelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedTypes = Array.from(typeSelect?.selectedOptions || []).map(opt => opt.value);
+    
+    caseletFilters.domains = selectedDomains;
+    caseletFilters.complexities = selectedComplexities;
+    caseletFilters.types = selectedTypes;
+    
+    filteredCaselets = caselets.filter(caselet => {
+        const domainMatch = selectedDomains.includes('all') || selectedDomains.length === 0 || selectedDomains.includes(caselet.domain);
+        const complexityMatch = selectedComplexities.includes('all') || selectedComplexities.length === 0 || selectedComplexities.includes(caselet.complexity);
+        const typeMatch = selectedTypes.includes('all') || selectedTypes.length === 0 || selectedTypes.includes(caselet.caseType);
+        
+        return domainMatch && complexityMatch && typeMatch;
+    });
+    
+    renderCaselets(filteredCaselets);
+    updateActiveFilters('caselet', caseletFilters);
+    saveFilterStateToSession();
+}
+
+function clearCaseletFilters() {
+    const domainSelect = document.getElementById('caselet-domain');
+    const complexitySelect = document.getElementById('caselet-complexity');
+    const typeSelect = document.getElementById('caselet-type');
+    
+    if (domainSelect) Array.from(domainSelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    if (complexitySelect) Array.from(complexitySelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    if (typeSelect) Array.from(typeSelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    
+    applyCaseletFilters();
 }
 
 // Quiz
@@ -370,6 +622,78 @@ function returnToQuizStart() {
     document.getElementById('quiz-start').style.display = 'block';
 }
 
+function initializeQuizFilters() {
+    populateQuizFilters();
+    
+    const subjectSelect = document.getElementById('quiz-subject');
+    const difficultySelect = document.getElementById('quiz-difficulty');
+    const typeSelect = document.getElementById('quiz-type');
+    const clearBtn = document.getElementById('clear-quiz-filters');
+    
+    if (subjectSelect) subjectSelect.addEventListener('change', applyQuizFilters);
+    if (difficultySelect) difficultySelect.addEventListener('change', applyQuizFilters);
+    if (typeSelect) typeSelect.addEventListener('change', applyQuizFilters);
+    if (clearBtn) clearBtn.addEventListener('click', clearQuizFilters);
+    
+    filteredQuizQuestions = [...mcqQuestions];
+}
+
+function populateQuizFilters() {
+    const subjects = new Set();
+    
+    mcqQuestions.forEach(q => {
+        if (q.subject) subjects.add(q.subject);
+    });
+    
+    const subjectSelect = document.getElementById('quiz-subject');
+    if (subjectSelect) {
+        subjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject;
+            option.textContent = subject;
+            option.selected = true;
+            subjectSelect.appendChild(option);
+        });
+    }
+}
+
+function applyQuizFilters() {
+    const subjectSelect = document.getElementById('quiz-subject');
+    const difficultySelect = document.getElementById('quiz-difficulty');
+    const typeSelect = document.getElementById('quiz-type');
+    
+    const selectedSubjects = Array.from(subjectSelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedDifficulties = Array.from(difficultySelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedTypes = Array.from(typeSelect?.selectedOptions || []).map(opt => opt.value);
+    
+    quizFilters.subjects = selectedSubjects;
+    quizFilters.difficulties = selectedDifficulties;
+    quizFilters.types = selectedTypes;
+    
+    filteredQuizQuestions = mcqQuestions.filter(q => {
+        const subjectMatch = selectedSubjects.includes('all') || selectedSubjects.length === 0 || selectedSubjects.includes(q.subject);
+        const difficultyMatch = selectedDifficulties.includes('all') || selectedDifficulties.length === 0 || selectedDifficulties.includes(q.difficulty);
+        const typeMatch = selectedTypes.includes('all') || selectedTypes.length === 0 || selectedTypes.includes(q.questionType);
+        
+        return subjectMatch && difficultyMatch && typeMatch;
+    });
+    
+    updateActiveFilters('quiz', quizFilters);
+    saveFilterStateToSession();
+}
+
+function clearQuizFilters() {
+    const subjectSelect = document.getElementById('quiz-subject');
+    const difficultySelect = document.getElementById('quiz-difficulty');
+    const typeSelect = document.getElementById('quiz-type');
+    
+    if (subjectSelect) Array.from(subjectSelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    if (difficultySelect) Array.from(difficultySelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    if (typeSelect) Array.from(typeSelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    
+    applyQuizFilters();
+}
+
 // Fun Facts
 function initializeFunFacts() {
     const newFactBtn = document.getElementById('new-fact');
@@ -379,7 +703,8 @@ function initializeFunFacts() {
 }
 
 function showRandomFact() {
-    const randomFact = funFacts[Math.floor(Math.random() * funFacts.length)];
+    const factsToShow = filteredFunFacts.length > 0 ? filteredFunFacts : funFacts;
+    const randomFact = factsToShow[Math.floor(Math.random() * factsToShow.length)];
     const factText = document.getElementById('fact-text');
     const factCategory = document.getElementById('fact-category');
     
@@ -391,13 +716,99 @@ function showRandomFact() {
     }
 }
 
+function initializeFunFactFilters() {
+    populateFunFactFilters();
+    
+    const categorySelect = document.getElementById('fact-category');
+    const typeSelect = document.getElementById('fact-type');
+    const clearBtn = document.getElementById('clear-fact-filters');
+    
+    if (categorySelect) categorySelect.addEventListener('change', applyFunFactFilters);
+    if (typeSelect) typeSelect.addEventListener('change', applyFunFactFilters);
+    if (clearBtn) clearBtn.addEventListener('click', clearFunFactFilters);
+    
+    filteredFunFacts = [...funFacts];
+}
+
+function populateFunFactFilters() {
+    const categories = new Set();
+    const types = new Set();
+    
+    funFacts.forEach(fact => {
+        if (fact.category) categories.add(fact.category);
+        if (fact.factType) types.add(fact.factType);
+    });
+    
+    const categorySelect = document.getElementById('fact-category');
+    if (categorySelect) {
+        categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            option.selected = true;
+            categorySelect.appendChild(option);
+        });
+    }
+    
+    const typeSelect = document.getElementById('fact-type');
+    if (typeSelect) {
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            option.selected = true;
+            typeSelect.appendChild(option);
+        });
+    }
+}
+
+function applyFunFactFilters() {
+    const categorySelect = document.getElementById('fact-category');
+    const typeSelect = document.getElementById('fact-type');
+    
+    const selectedCategories = Array.from(categorySelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedTypes = Array.from(typeSelect?.selectedOptions || []).map(opt => opt.value);
+    
+    factFilters.categories = selectedCategories;
+    factFilters.types = selectedTypes;
+    
+    filteredFunFacts = funFacts.filter(fact => {
+        const categoryMatch = selectedCategories.includes('all') || selectedCategories.length === 0 || selectedCategories.includes(fact.category);
+        const typeMatch = selectedTypes.includes('all') || selectedTypes.length === 0 || selectedTypes.includes(fact.factType);
+        
+        return categoryMatch && typeMatch;
+    });
+    
+    updateActiveFilters('fact', factFilters);
+    saveFilterStateToSession();
+}
+
+function clearFunFactFilters() {
+    const categorySelect = document.getElementById('fact-category');
+    const typeSelect = document.getElementById('fact-type');
+    
+    if (categorySelect) Array.from(categorySelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    if (typeSelect) Array.from(typeSelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    
+    applyFunFactFilters();
+}
+
 // Points to Ponder
-function renderPointsToPonder() {
+function renderPointsToPonder(items = pointsToPonder) {
     const container = document.getElementById('ponder-container');
     if (!container) return;
     
-    container.innerHTML = pointsToPonder.map(item => `
+    if (items.length === 0) {
+        container.innerHTML = '<div class="no-results"><p>No points to ponder match the selected filters. Try adjusting your selection.</p></div>';
+        return;
+    }
+    
+    container.innerHTML = items.map(item => `
         <div class="ponder-card">
+            <div class="ponder-meta">
+                <span class="badge badge-theme">${item.theme || 'General'}</span>
+                <span class="badge badge-complexity">${item.complexity || 'intermediate'}</span>
+            </div>
             <p class="ponder-question">${item.question}</p>
             <p class="ponder-context">${item.context}</p>
             <div class="ponder-topics">
@@ -405,6 +816,92 @@ function renderPointsToPonder() {
             </div>
         </div>
     `).join('');
+}
+
+function initializePonderFilters() {
+    populatePonderFilters();
+    
+    const themeSelect = document.getElementById('ponder-theme');
+    const complexitySelect = document.getElementById('ponder-complexity');
+    const discussionSelect = document.getElementById('ponder-discussion');
+    const clearBtn = document.getElementById('clear-ponder-filters');
+    
+    if (themeSelect) themeSelect.addEventListener('change', applyPonderFilters);
+    if (complexitySelect) complexitySelect.addEventListener('change', applyPonderFilters);
+    if (discussionSelect) discussionSelect.addEventListener('change', applyPonderFilters);
+    if (clearBtn) clearBtn.addEventListener('click', clearPonderFilters);
+    
+    filteredPonderItems = [...pointsToPonder];
+}
+
+function populatePonderFilters() {
+    const themes = new Set();
+    const discussionTypes = new Set();
+    
+    pointsToPonder.forEach(item => {
+        if (item.theme) themes.add(item.theme);
+        if (item.discussionType) discussionTypes.add(item.discussionType);
+    });
+    
+    const themeSelect = document.getElementById('ponder-theme');
+    if (themeSelect) {
+        themes.forEach(theme => {
+            const option = document.createElement('option');
+            option.value = theme;
+            option.textContent = theme;
+            option.selected = true;
+            themeSelect.appendChild(option);
+        });
+    }
+    
+    const discussionSelect = document.getElementById('ponder-discussion');
+    if (discussionSelect) {
+        discussionTypes.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            option.selected = true;
+            discussionSelect.appendChild(option);
+        });
+    }
+}
+
+function applyPonderFilters() {
+    const themeSelect = document.getElementById('ponder-theme');
+    const complexitySelect = document.getElementById('ponder-complexity');
+    const discussionSelect = document.getElementById('ponder-discussion');
+    
+    const selectedThemes = Array.from(themeSelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedComplexities = Array.from(complexitySelect?.selectedOptions || []).map(opt => opt.value);
+    const selectedDiscussionTypes = Array.from(discussionSelect?.selectedOptions || []).map(opt => opt.value);
+    
+    ponderFilters.themes = selectedThemes;
+    ponderFilters.complexities = selectedComplexities;
+    ponderFilters.discussionTypes = selectedDiscussionTypes;
+    
+    filteredPonderItems = pointsToPonder.filter(item => {
+        const themeMatch = selectedThemes.includes('all') || selectedThemes.length === 0 || selectedThemes.includes(item.theme);
+        const complexityMatch = selectedComplexities.includes('all') || selectedComplexities.length === 0 || selectedComplexities.includes(item.complexity);
+        const discussionMatch = selectedDiscussionTypes.includes('all') || selectedDiscussionTypes.length === 0 || selectedDiscussionTypes.includes(item.discussionType);
+        
+        return themeMatch && complexityMatch && discussionMatch;
+    });
+    
+    renderPointsToPonder(filteredPonderItems);
+    updateActiveFilters('ponder', ponderFilters);
+    saveFilterStateToSession();
+}
+
+function clearPonderFilters() {
+    const themeSelect = document.getElementById('ponder-theme');
+    const complexitySelect = document.getElementById('ponder-complexity');
+    const discussionSelect = document.getElementById('ponder-discussion');
+    
+    if (themeSelect) Array.from(themeSelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    if (complexitySelect) Array.from(complexitySelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    if (discussionSelect) Array.from(discussionSelect.options).forEach(opt => opt.selected = opt.value === 'all');
+    
+    applyPonderFilters();
 }
 
 // Utility function to make toggleGuideContent globally available
@@ -914,4 +1411,73 @@ function clearSearch() {
     }
     
     searchResults = [];
+}
+
+// Utility Functions for Filter Management
+function updateActiveFilters(type, filters) {
+    const containerId = `active-${type}-filters`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const badges = [];
+    
+    // Helper to create badges
+    const createBadge = (label, value) => {
+        return `<span class="filter-badge">${label}: ${value}<button class="filter-badge-remove" onclick="removeFilter('${type}', '${label}', '${value}')" aria-label="Remove filter">×</button></span>`;
+    };
+    
+    // Add badges for each filter type
+    Object.keys(filters).forEach(filterKey => {
+        const values = filters[filterKey];
+        if (values && values.length > 0 && !values.includes('all')) {
+            values.forEach(value => {
+                if (value !== 'all') {
+                    const label = filterKey.charAt(0).toUpperCase() + filterKey.slice(1, -1);
+                    badges.push(createBadge(label, value));
+                }
+            });
+        }
+    });
+    
+    container.innerHTML = badges.join('');
+}
+
+function removeFilter(type, label, value) {
+    // This would be called from the badge remove button
+    // Implement removal logic based on type
+    console.log(`Remove filter: ${type}, ${label}, ${value}`);
+}
+
+function saveFilterStateToSession() {
+    try {
+        const filterState = {
+            cardFilters,
+            caseletFilters,
+            quizFilters,
+            factFilters,
+            ponderFilters
+        };
+        sessionStorage.setItem('filterState', JSON.stringify(filterState));
+    } catch (e) {
+        console.error('Failed to save filter state:', e);
+    }
+}
+
+function loadFilterStateFromSession() {
+    try {
+        const saved = sessionStorage.getItem('filterState');
+        if (saved) {
+            const filterState = JSON.parse(saved);
+            // Restore filter states
+            if (filterState.cardFilters) cardFilters = filterState.cardFilters;
+            if (filterState.caseletFilters) caseletFilters = filterState.caseletFilters;
+            if (filterState.quizFilters) quizFilters = filterState.quizFilters;
+            if (filterState.factFilters) factFilters = filterState.factFilters;
+            if (filterState.ponderFilters) ponderFilters = filterState.ponderFilters;
+            
+            // Note: Would need to restore select values based on these states
+        }
+    } catch (e) {
+        console.error('Failed to load filter state:', e);
+    }
 }
