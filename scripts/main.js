@@ -5,6 +5,14 @@ let filteredCards = [];
 let currentQuizQuestion = 0;
 let quizScore = 0;
 let selectedAnswers = [];
+let searchIndex = null;
+let allContent = [];
+let searchResults = [];
+let activeFilters = {
+    types: ['guides', 'cards', 'caselets', 'quiz', 'facts', 'ponder'],
+    categories: [],
+    difficulties: ['beginner', 'intermediate', 'advanced']
+};
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -15,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeQuiz();
     initializeFunFacts();
     renderPointsToPonder();
+    initializeSearch();
 });
 
 // Navigation
@@ -404,3 +413,505 @@ window.checkAnswer = checkAnswer;
 window.nextQuestion = nextQuestion;
 window.restartQuiz = restartQuiz;
 window.returnToQuizStart = returnToQuizStart;
+
+// Search and Filter Functionality
+function initializeSearch() {
+    // Build search index
+    buildSearchIndex();
+    
+    const searchInput = document.getElementById('global-search');
+    const searchToggle = document.getElementById('search-toggle');
+    const searchClear = document.getElementById('search-clear');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
+    const filterTypeCheckboxes = document.querySelectorAll('.filter-type');
+    const filterDifficultyCheckboxes = document.querySelectorAll('.filter-difficulty');
+    
+    // Initialize category filters dynamically
+    initializeCategoryFilters();
+    
+    // Search input handler with debounce
+    let searchTimeout;
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                performSearch(e.target.value);
+            }, 300);
+        });
+        
+        // Show clear button when there's text
+        searchInput.addEventListener('input', (e) => {
+            if (searchClear) {
+                searchClear.style.display = e.target.value ? 'block' : 'none';
+            }
+        });
+    }
+    
+    // Mobile search toggle
+    if (searchToggle) {
+        searchToggle.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.classList.toggle('active');
+                if (searchInput.classList.contains('active')) {
+                    searchInput.focus();
+                }
+            }
+        });
+    }
+    
+    // Clear search
+    if (searchClear) {
+        searchClear.addEventListener('click', () => {
+            clearSearch();
+        });
+    }
+    
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', () => {
+            clearSearch();
+        });
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+F or Cmd+F
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }
+        // Forward slash
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }
+        // Escape to clear
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            clearSearch();
+        }
+    });
+    
+    // Filter handlers
+    filterTypeCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            updateTypeFilters();
+            applyFilters();
+        });
+    });
+    
+    filterDifficultyCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            updateDifficultyFilters();
+            applyFilters();
+        });
+    });
+}
+
+function buildSearchIndex() {
+    allContent = [];
+    
+    // Add learning guides
+    learningGuides.forEach(guide => {
+        allContent.push({
+            id: `guide-${guide.id}`,
+            type: 'guides',
+            title: guide.title,
+            description: guide.description,
+            content: stripHtml(guide.content),
+            difficulty: guide.difficulty,
+            category: 'Learning',
+            duration: guide.duration,
+            originalData: guide
+        });
+    });
+    
+    // Add memory cards
+    memoryCards.forEach(card => {
+        allContent.push({
+            id: `card-${card.id}`,
+            type: 'cards',
+            title: card.question,
+            description: card.answer,
+            content: `${card.question} ${card.answer}`,
+            category: card.category,
+            difficulty: null,
+            originalData: card
+        });
+    });
+    
+    // Add caselets
+    caselets.forEach(caselet => {
+        allContent.push({
+            id: `caselet-${caselet.id}`,
+            type: 'caselets',
+            title: caselet.title,
+            description: caselet.scenario,
+            content: `${caselet.scenario} ${caselet.problem} ${caselet.solution} ${caselet.learnings.join(' ')}`,
+            category: 'Case Study',
+            difficulty: null,
+            originalData: caselet
+        });
+    });
+    
+    // Add quiz questions
+    mcqQuestions.forEach((question, index) => {
+        allContent.push({
+            id: `quiz-${index}`,
+            type: 'quiz',
+            title: question.question,
+            description: question.explanation,
+            content: `${question.question} ${question.options.join(' ')} ${question.explanation}`,
+            category: 'Quiz',
+            difficulty: null,
+            originalData: question
+        });
+    });
+    
+    // Add fun facts
+    funFacts.forEach(fact => {
+        allContent.push({
+            id: `fact-${fact.id}`,
+            type: 'facts',
+            title: `${fact.category} Fact`,
+            description: fact.fact,
+            content: fact.fact,
+            category: fact.category,
+            difficulty: null,
+            originalData: fact
+        });
+    });
+    
+    // Add points to ponder
+    pointsToPonder.forEach(item => {
+        allContent.push({
+            id: `ponder-${item.id}`,
+            type: 'ponder',
+            title: item.question,
+            description: item.context,
+            content: `${item.question} ${item.context} ${item.relatedTopics.join(' ')}`,
+            category: item.relatedTopics[0] || 'General',
+            difficulty: null,
+            originalData: item
+        });
+    });
+    
+    // No longer need Fuse.js initialization
+}
+
+function initializeCategoryFilters() {
+    const categoryFiltersContainer = document.getElementById('category-filters');
+    if (!categoryFiltersContainer) return;
+    
+    // Get unique categories
+    const categories = new Set();
+    allContent.forEach(item => {
+        if (item.category) {
+            categories.add(item.category);
+        }
+    });
+    
+    // Create category filter checkboxes
+    const categoryArray = Array.from(categories).sort();
+    activeFilters.categories = categoryArray;
+    
+    const filterHTML = categoryArray.map(category => `
+        <label class="filter-checkbox">
+            <input type="checkbox" value="${category}" class="filter-category" checked>
+            <span>${category}</span>
+        </label>
+    `).join('');
+    
+    categoryFiltersContainer.innerHTML = '<h3>Categories</h3>' + filterHTML;
+    
+    // Add event listeners
+    document.querySelectorAll('.filter-category').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            updateCategoryFilters();
+            applyFilters();
+        });
+    });
+}
+
+function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+}
+
+function simpleSearch(query, items) {
+    const lowerQuery = query.toLowerCase().trim();
+    const queryWords = lowerQuery.split(/\s+/);
+    
+    return items.map(item => {
+        const searchableText = `${item.title} ${item.description} ${item.content} ${item.category}`.toLowerCase();
+        
+        // Calculate score based on matches
+        let score = 0;
+        
+        // Exact phrase match (highest priority)
+        if (searchableText.includes(lowerQuery)) {
+            score += 100;
+        }
+        
+        // Individual word matches
+        queryWords.forEach(word => {
+            if (searchableText.includes(word)) {
+                score += 10;
+            }
+            // Bonus for title matches
+            if (item.title.toLowerCase().includes(word)) {
+                score += 20;
+            }
+            // Bonus for category matches
+            if (item.category && item.category.toLowerCase().includes(word)) {
+                score += 15;
+            }
+        });
+        
+        return { item, score };
+    })
+    .filter(result => result.score > 0)
+    .sort((a, b) => b.score - a.score);
+}
+
+function performSearch(query) {
+    const searchInput = document.getElementById('global-search');
+    const searchResultsSection = document.getElementById('search-results');
+    
+    if (!query || query.trim().length === 0) {
+        // Hide search results if query is empty
+        if (searchResultsSection) {
+            searchResultsSection.style.display = 'none';
+        }
+        return;
+    }
+    
+    // Perform simple search
+    const results = simpleSearch(query, allContent);
+    searchResults = results.map(result => result.item);
+    
+    // Show search results section
+    if (searchResultsSection) {
+        searchResultsSection.style.display = 'block';
+        searchResultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    // Apply filters
+    applyFilters();
+}
+
+function updateTypeFilters() {
+    const checkboxes = document.querySelectorAll('.filter-type:checked');
+    activeFilters.types = Array.from(checkboxes).map(cb => cb.value);
+}
+
+function updateCategoryFilters() {
+    const checkboxes = document.querySelectorAll('.filter-category:checked');
+    activeFilters.categories = Array.from(checkboxes).map(cb => cb.value);
+}
+
+function updateDifficultyFilters() {
+    const checkboxes = document.querySelectorAll('.filter-difficulty:checked');
+    activeFilters.difficulties = Array.from(checkboxes).map(cb => cb.value);
+}
+
+function applyFilters() {
+    let filtered = [...searchResults];
+    
+    // Apply type filters
+    if (activeFilters.types.length > 0) {
+        filtered = filtered.filter(item => activeFilters.types.includes(item.type));
+    }
+    
+    // Apply category filters
+    if (activeFilters.categories.length > 0) {
+        filtered = filtered.filter(item => !item.category || activeFilters.categories.includes(item.category));
+    }
+    
+    // Apply difficulty filters
+    if (activeFilters.difficulties.length > 0) {
+        filtered = filtered.filter(item => !item.difficulty || activeFilters.difficulties.includes(item.difficulty));
+    }
+    
+    displaySearchResults(filtered);
+}
+
+function displaySearchResults(results) {
+    const container = document.getElementById('search-results-container');
+    const countElement = document.getElementById('results-count');
+    
+    if (!container) return;
+    
+    // Update count
+    if (countElement) {
+        countElement.textContent = `${results.length} result${results.length !== 1 ? 's' : ''} found`;
+    }
+    
+    if (results.length === 0) {
+        container.innerHTML = '<div class="no-results"><p>No results found. Try adjusting your search or filters.</p></div>';
+        return;
+    }
+    
+    // Group results by type
+    const grouped = {
+        guides: [],
+        cards: [],
+        caselets: [],
+        quiz: [],
+        facts: [],
+        ponder: []
+    };
+    
+    results.forEach(item => {
+        if (grouped[item.type]) {
+            grouped[item.type].push(item);
+        }
+    });
+    
+    // Render results
+    let html = '';
+    
+    if (grouped.guides.length > 0) {
+        html += '<div class="results-section"><h3>Learning Guides</h3><div class="results-group">';
+        grouped.guides.forEach(item => {
+            html += `
+                <div class="result-card" data-type="guides">
+                    <div class="result-header">
+                        <span class="result-type-badge">Guide</span>
+                        ${item.difficulty ? `<span class="difficulty-badge difficulty-${item.difficulty}">${item.difficulty}</span>` : ''}
+                    </div>
+                    <h4 class="result-title">${highlightMatch(item.title)}</h4>
+                    <p class="result-description">${highlightMatch(truncate(item.description, 150))}</p>
+                    <a href="#guides" class="result-link">View Guide →</a>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    if (grouped.cards.length > 0) {
+        html += '<div class="results-section"><h3>Memory Cards</h3><div class="results-group">';
+        grouped.cards.forEach(item => {
+            html += `
+                <div class="result-card" data-type="cards">
+                    <div class="result-header">
+                        <span class="result-type-badge">Card</span>
+                        <span class="category-badge">${item.category}</span>
+                    </div>
+                    <h4 class="result-title">${highlightMatch(item.title)}</h4>
+                    <p class="result-description">${highlightMatch(truncate(item.description, 150))}</p>
+                    <a href="#memory-cards" class="result-link">View Card →</a>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    if (grouped.caselets.length > 0) {
+        html += '<div class="results-section"><h3>Caselets</h3><div class="results-group">';
+        grouped.caselets.forEach(item => {
+            html += `
+                <div class="result-card" data-type="caselets">
+                    <div class="result-header">
+                        <span class="result-type-badge">Caselet</span>
+                    </div>
+                    <h4 class="result-title">${highlightMatch(item.title)}</h4>
+                    <p class="result-description">${highlightMatch(truncate(item.description, 150))}</p>
+                    <a href="#caselets" class="result-link">View Caselet →</a>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    if (grouped.quiz.length > 0) {
+        html += '<div class="results-section"><h3>Quiz Questions</h3><div class="results-group">';
+        grouped.quiz.forEach(item => {
+            html += `
+                <div class="result-card" data-type="quiz">
+                    <div class="result-header">
+                        <span class="result-type-badge">Quiz</span>
+                    </div>
+                    <h4 class="result-title">${highlightMatch(item.title)}</h4>
+                    <p class="result-description">${highlightMatch(truncate(item.description, 150))}</p>
+                    <a href="#mcq" class="result-link">View Quiz →</a>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    if (grouped.facts.length > 0) {
+        html += '<div class="results-section"><h3>Fun Facts</h3><div class="results-group">';
+        grouped.facts.forEach(item => {
+            html += `
+                <div class="result-card" data-type="facts">
+                    <div class="result-header">
+                        <span class="result-type-badge">Fact</span>
+                        <span class="category-badge">${item.category}</span>
+                    </div>
+                    <p class="result-description">${highlightMatch(item.description)}</p>
+                    <a href="#fun-facts" class="result-link">View Facts →</a>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    if (grouped.ponder.length > 0) {
+        html += '<div class="results-section"><h3>Points to Ponder</h3><div class="results-group">';
+        grouped.ponder.forEach(item => {
+            html += `
+                <div class="result-card" data-type="ponder">
+                    <div class="result-header">
+                        <span class="result-type-badge">Ponder</span>
+                    </div>
+                    <h4 class="result-title">${highlightMatch(item.title)}</h4>
+                    <p class="result-description">${highlightMatch(truncate(item.description, 150))}</p>
+                    <a href="#ponder" class="result-link">View Point to Ponder →</a>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+function highlightMatch(text) {
+    const searchInput = document.getElementById('global-search');
+    if (!searchInput || !searchInput.value) return text;
+    
+    const query = searchInput.value.trim();
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
+
+function truncate(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substr(0, maxLength) + '...';
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('global-search');
+    const searchClear = document.getElementById('search-clear');
+    const searchResultsSection = document.getElementById('search-results');
+    
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.blur();
+    }
+    
+    if (searchClear) {
+        searchClear.style.display = 'none';
+    }
+    
+    if (searchResultsSection) {
+        searchResultsSection.style.display = 'none';
+    }
+    
+    searchResults = [];
+}
